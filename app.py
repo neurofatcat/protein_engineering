@@ -1,9 +1,6 @@
 import streamlit as st
 import py3Dmol
-import pyrosetta
-
-# Initialize PyRosetta
-pyrosetta.init("-mute all")
+import os
 
 # App Title
 st.title("Protein Engineering App")
@@ -37,35 +34,12 @@ def visualize_pdb(pdb_string):
     view.zoomTo()  # Zoom to fit the model
     return view._make_html()
 
-# Protein Preparation Logic
+# Handle Protein Preparation
 def prepare_protein(pdb_string):
-    """Prepare protein: remove waters, add hydrogens, and optimize geometry."""
-    pose = pyrosetta.pose_from_pdbstring(pdb_string)
-    
-    # Remove waters
-    st.write("Removing water molecules...")
-    waters_removed = pose.residues_from_subset(
-        pyrosetta.rosetta.core.select.residue_selector.ResidueIndexSelector("HOH")
-    )
-    for i in sorted(waters_removed, reverse=True):
-        pose.delete_residue_slow(i)
-    
-    # Add hydrogens
-    st.write("Adding missing hydrogen atoms...")
-    pyrosetta.rosetta.protocols.hydrogen_addition.AddHydrogenMover().apply(pose)
-    
-    # Optimize geometry
-    st.write("Optimizing geometry (energy minimization)...")
-    movemap = pyrosetta.MoveMap()
-    movemap.set_bb(True)  # Allow backbone flexibility
-    movemap.set_chi(True)  # Allow side-chain flexibility
-    min_mover = pyrosetta.rosetta.protocols.minimization_packing.MinMover()
-    min_mover.movemap = movemap
-    min_mover.score_function(pyrosetta.get_fa_scorefxn())
-    min_mover.apply(pose)
-    
-    # Return the modified PDB string
-    return pose.dump_pdb()
+    """Simulate protein preparation (placeholder)."""
+    # Example: Remove water molecules (not implemented here for prototype)
+    st.write("Simulating protein preparation...")
+    return pdb_string + "\nREMARK Simulated preparation done."
 
 # Main Area Logic
 if workflow == "Upload and Visualize Protein":
