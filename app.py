@@ -1,5 +1,9 @@
 import streamlit as st
 import py3Dmol
+import pyrosetta
+
+# Initialize PyRosetta
+pyrosetta.init("-mute all")
 
 # App Title
 st.title("Protein Engineering App")
@@ -12,13 +16,17 @@ workflow = st.sidebar.radio(
         "Upload and Visualize Protein",
         "Protein Preparation",
         "Ligand Preparation",
-        "Protein Structure Prediction",
-        "Protein-Protein Docking",
-        "Loop Modeling",
-        "Protein Design",
-        "Antibody Modeling",
     ),
 )
+
+# Helper Function: Save file with custom name
+def save_output_file(content, original_filename, module_name, extension="pdb"):
+    """Save content to a file with a name including the original filename and module."""
+    base_name = os.path.splitext(original_filename)[0]
+    output_filename = f"{module_name}_{base_name}.{extension}"
+    with open(output_filename, "w") as f:
+        f.write(content)
+    return output_filename
 
 # Function to generate 3D visualization of PDB
 def visualize_pdb(pdb_string):
@@ -29,15 +37,35 @@ def visualize_pdb(pdb_string):
     view.zoomTo()  # Zoom to fit the model
     return view._make_html()
 
-# Handle Protein Preparation
+# Protein Preparation Logic
 def prepare_protein(pdb_string):
-    """Dummy protein preparation function (placeholder)."""
-    # In reality, you would perform tasks like:
-    # - Removing water molecules
-    # - Adding hydrogens
-    # - Repairing missing residues
-    st.write("Protein preparation steps would be applied here.")
-    return pdb_string
+    """Prepare protein: remove waters, add hydrogens, and optimize geometry."""
+    pose = pyrosetta.pose_from_pdbstring(pdb_string)
+    
+    # Remove waters
+    st.write("Removing water molecules...")
+    waters_removed = pose.residues_from_subset(
+        pyrosetta.rosetta.core.select.residue_selector.ResidueIndexSelector("HOH")
+    )
+    for i in sorted(waters_removed, reverse=True):
+        pose.delete_residue_slow(i)
+    
+    # Add hydrogens
+    st.write("Adding missing hydrogen atoms...")
+    pyrosetta.rosetta.protocols.hydrogen_addition.AddHydrogenMover().apply(pose)
+    
+    # Optimize geometry
+    st.write("Optimizing geometry (energy minimization)...")
+    movemap = pyrosetta.MoveMap()
+    movemap.set_bb(True)  # Allow backbone flexibility
+    movemap.set_chi(True)  # Allow side-chain flexibility
+    min_mover = pyrosetta.rosetta.protocols.minimization_packing.MinMover()
+    min_mover.movemap = movemap
+    min_mover.score_function(pyrosetta.get_fa_scorefxn())
+    min_mover.apply(pose)
+    
+    # Return the modified PDB string
+    return pose.dump_pdb()
 
 # Main Area Logic
 if workflow == "Upload and Visualize Protein":
@@ -68,7 +96,11 @@ elif workflow == "Protein Preparation":
         
         # Call preparation function
         prepared_pdb = prepare_protein(pdb_content)
-        st.write("Protein prepared successfully (placeholder output).")
+        
+        # Save the prepared PDB
+        prepared_filename = save_output_file(prepared_pdb, uploaded_file.name, "protein_prep", "pdb")
+        st.success(f"Protein preparation complete. Saved as {prepared_filename}")
+        st.download_button("Download Prepared Protein", prepared_pdb, file_name=prepared_filename)
 
 elif workflow == "Ligand Preparation":
     st.subheader("Ligand Preparation")
@@ -78,32 +110,6 @@ elif workflow == "Ligand Preparation":
     if uploaded_file:
         st.success(f"Uploaded: {uploaded_file.name}")
         st.write("Ligand preparation steps would be applied here (placeholder).")
-
-# Remaining Workflows
-elif workflow == "Protein Structure Prediction":
-    st.subheader("Protein Structure Prediction")
-    st.write("Predict the 3D structure of a protein from its amino acid sequence.")
-    st.button("Start Protein Structure Prediction")
-
-elif workflow == "Protein-Protein Docking":
-    st.subheader("Protein-Protein Docking")
-    st.write("Model the interactions between two or more proteins.")
-    st.button("Start Docking Workflow")
-
-elif workflow == "Loop Modeling":
-    st.subheader("Loop Modeling")
-    st.write("Refine or predict flexible loop regions within protein structures.")
-    st.button("Start Loop Modeling Workflow")
-
-elif workflow == "Protein Design":
-    st.subheader("Protein Design")
-    st.write("Design new protein sequences with desired structural or functional properties.")
-    st.button("Start Protein Design Workflow")
-
-elif workflow == "Antibody Modeling":
-    st.subheader("Antibody Modeling")
-    st.write("Model antibody structures, including CDR loop refinement.")
-    st.button("Start Antibody Modeling Workflow")
 
 # Footer
 st.markdown("---")
