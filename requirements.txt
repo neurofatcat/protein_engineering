@@ -1,0 +1,7 @@
+streamlit
+numpy
+pandas
+biopython
+py3Dmol
+matplotlib
+pyrosetta-installer
