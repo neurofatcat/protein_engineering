@@ -20,14 +20,8 @@ def visualize_pdb(pdb_string):
 
 # Handle uploaded file
 if uploaded_file:
-    # Save the uploaded file temporarily
-    temp_file_path = os.path.join("temp.pdb")
-    with open(temp_file_path, "wb") as f:
-        f.write(uploaded_file.getbuffer())
-    
     # Read the PDB file content
-    with open(temp_file_path, "r") as pdb_file:
-        pdb_content = pdb_file.read()
+    pdb_content = uploaded_file.getvalue().decode("utf-8")
     
     # Display uploaded file name and size
     st.success(f"Uploaded: {uploaded_file.name}")
@@ -36,10 +30,7 @@ if uploaded_file:
     # Visualize the PDB structure
     st.subheader("Protein Structure Visualization")
     structure_view = visualize_pdb(pdb_content)
-    structure_html = structure_view.render()
+    structure_html = structure_view._repr_html_()  # Generate the HTML for the view
     st.components.v1.html(structure_html, height=500)
-
-    # Clean up temporary file
-    os.remove(temp_file_path)
 else:
     st.info("Please upload a PDB file to visualize its structure.")
