@@ -15,7 +15,7 @@ def generate_3d_visualization(pdb_string):
     view.addModel(pdb_string, "pdb")  # Load PDB model
     view.setStyle({"cartoon": {"color": "spectrum"}})  # Cartoon style
     view.zoomTo()  # Fit to screen
-    return view.js()  # Return the JavaScript code for rendering
+    return view
 
 # Handle uploaded file
 if uploaded_file:
@@ -28,16 +28,10 @@ if uploaded_file:
     
     # Visualize the PDB structure
     st.subheader("Protein Structure Visualization")
-    visualization_js = generate_3d_visualization(pdb_content)
-    
-    # Embed the visualization in Streamlit using HTML
-    st.components.v1.html(f"""
-    <div id="3dmolviewer" style="width: 800px; height: 400px;"></div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.0.3/3Dmol-min.js"></script>
-    <script>
-    var viewer = $3Dmol.createViewer("3dmolviewer", {{ defaultcolors: $3Dmol.rasmolElementColors }});
-    {visualization_js}
-    </script>
-    """, height=450)
+    view = generate_3d_visualization(pdb_content)
+    view_html = view._make_html()  # Generate HTML for embedding
+
+    # Embed the HTML in Streamlit
+    st.components.v1.html(view_html, height=450)
 else:
     st.info("Please upload a PDB file to visualize its structure.")
