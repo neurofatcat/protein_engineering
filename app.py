@@ -1,6 +1,5 @@
 import streamlit as st
 import py3Dmol
-import os
 
 # App Title
 st.title("Protein Engineering App")
@@ -18,6 +17,12 @@ def visualize_pdb(pdb_string):
     view.zoomTo()  # Zoom to fit the structure
     return view
 
+# Display the visualized structure
+def render_pdb_with_py3dmol(pdb_string):
+    """Generate HTML to embed py3Dmol structure in Streamlit."""
+    view = visualize_pdb(pdb_string)
+    return view.show()
+
 # Handle uploaded file
 if uploaded_file:
     # Read the PDB file content
@@ -29,8 +34,6 @@ if uploaded_file:
     
     # Visualize the PDB structure
     st.subheader("Protein Structure Visualization")
-    structure_view = visualize_pdb(pdb_content)
-    structure_html = structure_view._repr_html_()  # Generate the HTML for the view
-    st.components.v1.html(structure_html, height=500)
+    render_pdb_with_py3dmol(pdb_content)
 else:
     st.info("Please upload a PDB file to visualize its structure.")
